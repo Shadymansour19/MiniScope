@@ -19,7 +19,11 @@
 #include <QShortcut>
 #include <QCursor>
 #include "channel.h"
-#include "serialthread.h"
+#include <QThread>
+#include <QtSerialPort/QSerialPortInfo>
+#include <QDebug>
+#include <QLineEdit>
+#include "serialReader.h"
 
 
 QT_BEGIN_NAMESPACE
@@ -43,6 +47,10 @@ public:
         offline
     };
 
+signals:
+    void serialEnable();
+    void serialDisable();
+
 private slots:
     void btnPlayStopHandler();
     void btnPauseResumeHandler();
@@ -60,12 +68,14 @@ private:
     bool recording;
     QFile *writeFile, *readFile;
     QTextStream *writeStream, *readStream;
-    SerialThread *serialThread;
+    QThread *serialThread;
+    SerialReader *serialReader;
     QLabeledUnitedDial *dialTimeRng, *dialTimePos;
     QChart *chart;
     QChartView *chartView;
     QValueAxis *timeAxis;
     QTimer updatePlotTimer, updateNumericDisplayTimer;
+    QLineEdit *boxSerialPort;
     QToolButton *btnPlayStop, *btnPauseResume, *btnRefresh, *btnSaveToFile, *btnReadFromFile;
     QPushButton *btnAuto;
     QIcon icnPlay, icnStop, icnPause, icnRefresh, icnSave, icnReadFile;

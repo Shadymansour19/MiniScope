@@ -46,6 +46,7 @@ MainWindow::MainWindow(QWidget *parent)
     dialTimePos = new QLabeledUnitedDial("Time Pos", "S", Qt::white, false, this);
     dialTimePos->setValue(dispalyMaxTime);
 
+    boxSerialPort = new QLineEdit(this);
     btnPlayStop = new QToolButton(this);
     btnPauseResume = new QToolButton(this);
     btnRefresh = new QToolButton(this);
@@ -59,6 +60,19 @@ MainWindow::MainWindow(QWidget *parent)
     icnRefresh = style()->standardIcon(QStyle::SP_BrowserReload);
     icnSave = style()->standardIcon(QStyle::SP_DialogSaveButton);
     icnReadFile = style()->standardIcon(QStyle::SP_DirOpenIcon);
+
+    boxSerialPort->setPlaceholderText("Serial Port");
+    boxSerialPort->setToolTip("Serial Port");
+    boxSerialPort->setStyleSheet(
+        "QLineEdit {"
+        "  border: 1px solid;"
+        "  border-radius: 5px;"
+        "  padding: 4px;"
+        "}"
+        "QLineEdit:focus {"
+        "  border: 2px solid green;"
+        "}"
+    );
 
     btnPlayStop->setIcon(icnPlay);
     btnPlayStop->setToolTip("Start");
@@ -88,7 +102,13 @@ MainWindow::MainWindow(QWidget *parent)
     auto btnAutoFont = btnAuto->font();
     btnAutoFont.setBold(true);
     btnAuto->setFont(btnAutoFont);
-    btnAuto->setStyleSheet("background-color: darkmagenta;");
+    btnAuto->setStyleSheet(
+        "QPushButton {"
+        "  background-color: darkmagenta;"
+        "  border-radius: 10px;"
+        "  padding: 4px;"
+        "}"
+    );
 
     btnPauseResume->setEnabled(false);
     btnRefresh->setEnabled(false);
@@ -108,21 +128,22 @@ MainWindow::MainWindow(QWidget *parent)
     connect(dialTimePos, &QLabeledUnitedDial::valueChanged, this, &MainWindow::updateTimeRange);
     connect(channelTabs, &QTabWidget::currentChanged, this, &MainWindow::updateNumericDisplay);
 
-    controlLayout->addWidget(btnPlayStop, 0, 0, Qt::AlignHCenter);
-    controlLayout->addWidget(btnPauseResume, 0, 1, Qt::AlignHCenter);
-    controlLayout->addWidget(btnRefresh, 0, 2, Qt::AlignHCenter);
-    controlLayout->addWidget(btnSaveToFile, 0, 3, Qt::AlignHCenter);
-    controlLayout->addWidget(btnReadFromFile, 0, 4, Qt::AlignHCenter);
-    controlLayout->addWidget(btnAuto, 1, 0, 1, 5);
-    controlLayout->addWidget(dialTimeRng, 2, 0, 1, 5, Qt::AlignHCenter);
-    controlLayout->addWidget(dialTimePos, 3, 0, 1, 5, Qt::AlignHCenter);
+    controlLayout->addWidget(boxSerialPort, 0, 0, 1, 5);
+    controlLayout->addWidget(btnPlayStop, 1, 0, Qt::AlignHCenter);
+    controlLayout->addWidget(btnPauseResume, 1, 1, Qt::AlignHCenter);
+    controlLayout->addWidget(btnRefresh, 1, 2, Qt::AlignHCenter);
+    controlLayout->addWidget(btnSaveToFile, 1, 3, Qt::AlignHCenter);
+    controlLayout->addWidget(btnReadFromFile, 1, 4, Qt::AlignHCenter);
+    controlLayout->addWidget(btnAuto, 2, 0, 1, 5);
+    controlLayout->addWidget(dialTimeRng, 3, 0, 1, 5, Qt::AlignHCenter);
+    controlLayout->addWidget(dialTimePos, 4, 0, 1, 5, Qt::AlignHCenter);
 
     QFrame *separator = new QFrame();
     separator->setFrameShape(QFrame::StyledPanel);
     separator->setStyleSheet("border: none;");
-    controlLayout->addWidget(separator, 4, 0, 1, 5, Qt::AlignHCenter);
+    controlLayout->addWidget(separator, 5, 0, 1, 5, Qt::AlignHCenter);
 
-    controlLayout->addWidget(channelTabs, 5, 0, 1, 5, Qt::AlignHCenter);
+    controlLayout->addWidget(channelTabs, 6, 0, 1, 5, Qt::AlignHCenter);
     QTabBar *tabBar = channelTabs->tabBar();
     for (auto i = 0; i < NUM_CHS; i++) {
         channelTabs->addTab(channels[i]->tabWidget, channels[i]->label);
@@ -154,8 +175,31 @@ MainWindow::MainWindow(QWidget *parent)
         c->series->attachAxis(c->axis);
     }
 
-    serialThread = new SerialThread(this, "/dev/pts/2");
-    connect(serialThread, &SerialThread::newSamples, this, [=](int channel, QVector<double> values, QVector<double> times) {
+    serialThread = new QThread(this);
+
+    // auto serialPortInfos = QSerialPortInfo::availablePorts();
+    // for (const QSerialPortInfo &portInfo : serialPortInfos) {
+    //     qDebug() << "Port Name:" << portInfo.portName();
+    //     qDebug() << "System Location:" << portInfo.systemLocation();
+    //     qDebug() << "Description:" << portInfo.description();
+    //     qDebug() << "Manufacturer:" << portInfo.manufacturer();
+    //     qDebug() << "Vendor Identifier:" << (portInfo.hasVendorIdentifier() ? QByteArray::number(portInfo.vendorIdentifier(), 16) : "N/A");
+    //     qDebug() << "Product Identifier:" << (portInfo.hasProductIdentifier() ? QByteArray::number(portInfo.productIdentifier(), 16) : "N/A");
+    //     qDebug() << "-----------------------------------------";
+    // }
+
+
+    serialReader = new SerialReader();
+    serialReader->moveToThread(serialThread);
+    connect(this, &MainWindow::serialEnable, serialReader, &SerialReader::run);
+    connect(this, &MainWindow::serialDisable, serialReader, &SerialReader::stop);
+    connect(serialThread, &QThread::destroyed, serialReader, &SerialReader::stop);
+    connect(serialThread, &QThread::finished, serialReader, &SerialReader::stop);
+    connect(serialReader, &SerialReader::newSamples, this, [=](int channel, QVector<double> values, QVector<double> times) {
+        if (currentState == stoped) {
+            return;
+        }
+
         channels[channel]->addPoints(times, values);
         if (writeStream != nullptr) {
             for (int i = 0; i < values.size(); i++) {
@@ -164,15 +208,20 @@ MainWindow::MainWindow(QWidget *parent)
         }
     });
 
+    serialThread->start();
+
     connect(&updatePlotTimer, &QTimer::timeout, this, &MainWindow::updatePlot);
     connect(&updateNumericDisplayTimer, &QTimer::timeout, this, &MainWindow::updateNumericDisplay);
     setCentralWidget(central);
 }
 
 MainWindow::~MainWindow() {
-    serialThread->stop();
+    emit serialDisable();
+    serialThread->quit();
+    serialThread->wait();
     writeFile->close();
 }
+
 
 void MainWindow::btnPlayStopHandler() {
     switch (currentState) {
@@ -183,6 +232,7 @@ void MainWindow::btnPlayStopHandler() {
         btnPlayStop->setToolTip("Stop");
         channels[0]->enableUI();
         channels[1]->enableUI();
+        serialReader->setPort(boxSerialPort->text());
         btnPauseResume->setEnabled(true);
         btnRefresh->setEnabled(false);
         btnReadFromFile->setEnabled(false);
@@ -192,7 +242,7 @@ void MainWindow::btnPlayStopHandler() {
         dialTimePos->setEnabled(false);
         updatePlotTimer.start(updatePlotInterval_ms);
         updateNumericDisplayTimer.start(updateNumericDispalyInterval_ms);
-        serialThread->start();
+        emit serialEnable();
         break;
 
     default:
@@ -215,7 +265,7 @@ void MainWindow::btnPlayStopHandler() {
         loadShortcut->setEnabled(true);
         updatePlotTimer.stop();
         updateNumericDisplayTimer.stop();
-        serialThread->stop();
+        emit serialDisable();
         if (writeFile != nullptr) {
             writeFile->close();
             writeFile = nullptr;

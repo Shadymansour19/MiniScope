@@ -10,19 +10,18 @@
 // #include "mainwindow.h"
 
 
-class SerialThread : public QThread {
+class SerialReader : public QObject {
     Q_OBJECT
 public:
-    SerialThread(QObject *parent = nullptr, QString port = "/dev/pts/2");
-    ~SerialThread();
+    SerialReader(QString port = "/dev/pts/2");
+    ~SerialReader();
 
+    void setPort(QString port);
     void stop();
+    void run();
 
 signals:
     void newSamples(int channel, QVector<double> values, QVector<double> times);
-
-protected:
-    void run() override;
 
 private:
     QSerialPort *serial;

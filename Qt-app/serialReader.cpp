@@ -1,10 +1,10 @@
-#include "serialthread.h"
+#include "serialReader.h"
 #include <QDateTime>
 #include <QTextStream>
 
-SerialThread::SerialThread(QObject *parent, QString port) : QThread(parent) {
+SerialReader::SerialReader(QString port) {
     serial = new QSerialPort(this);
-    serial->setPortName(port);     // COM3 for windows - /dev/ttyUSB0 for linux
+    serial->setPortName(port);
     serial->setBaudRate(QSerialPort::Baud115200);
     serial->setDataBits(QSerialPort::Data8);
     serial->setParity(QSerialPort::NoParity);
@@ -12,20 +12,19 @@ SerialThread::SerialThread(QObject *parent, QString port) : QThread(parent) {
     serial->setFlowControl(QSerialPort::NoFlowControl);
 }
 
-SerialThread::~SerialThread() {
+SerialReader::~SerialReader() {
     stop();
 }
 
-void SerialThread::stop() {
-    running = false;
-    if (serial->isOpen()) {
-        serial->close();
-    }
-    wait();
+void SerialReader::setPort(QString port) {
+    serial->setPortName(port);
 }
 
-void SerialThread::run() {
-    serial->moveToThread(this);
+void SerialReader::stop() {
+    running = false;
+}
+
+void SerialReader::run() {
     if (!serial->open(QIODevice::ReadWrite)) {
         qWarning("Failed to open serial port!");
         return;
@@ -39,7 +38,7 @@ void SerialThread::run() {
         if (serial->waitForReadyRead(50)) {
             buffer.append(serial->readAll());
 
-            // assume each sample = "[ch-id] [time-stamp] [val]\n"
+            // each sample = "[ch-id] [time-stamp] [val]\n"
             while (buffer.contains('\n')) {
                 int newlineIndex = buffer.indexOf('\n');
                 QByteArray line = buffer.left(newlineIndex).trimmed();
