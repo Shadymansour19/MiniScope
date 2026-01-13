@@ -3,12 +3,13 @@
 #include <QTextStream>
 
 SerialThread::SerialThread(QObject *parent, QString port) : QThread(parent) {
-    serial.setPortName(port);     // COM3 for windows - /dev/ttyUSB0 for linux
-    serial.setBaudRate(QSerialPort::Baud115200);
-    serial.setDataBits(QSerialPort::Data8);
-    serial.setParity(QSerialPort::NoParity);
-    serial.setStopBits(QSerialPort::OneStop);
-    serial.setFlowControl(QSerialPort::NoFlowControl);
+    serial = new QSerialPort(this);
+    serial->setPortName(port);     // COM3 for windows - /dev/ttyUSB0 for linux
+    serial->setBaudRate(QSerialPort::Baud115200);
+    serial->setDataBits(QSerialPort::Data8);
+    serial->setParity(QSerialPort::NoParity);
+    serial->setStopBits(QSerialPort::OneStop);
+    serial->setFlowControl(QSerialPort::NoFlowControl);
 }
 
 SerialThread::~SerialThread() {
@@ -17,32 +18,26 @@ SerialThread::~SerialThread() {
 
 void SerialThread::stop() {
     running = false;
-    if (serial.isOpen()) {
-        serial.close();
+    if (serial->isOpen()) {
+        serial->close();
     }
     wait();
 }
 
-void SerialThread::reset() {
-    if (serial.isOpen()) {
-        serial.write("reset\n");
-    }
-}
-
 void SerialThread::run() {
-    if (!serial.open(QIODevice::ReadOnly)) {
+    serial->moveToThread(this);
+    if (!serial->open(QIODevice::ReadWrite)) {
         qWarning("Failed to open serial port!");
         return;
     }
 
+    serial->write("reset\n");
     running = true;
     QByteArray buffer;
-    QElapsedTimer timer;
-    timer.start();
 
     while (running) {
-        if (serial.waitForReadyRead(50)) {
-            buffer.append(serial.readAll());
+        if (serial->waitForReadyRead(50)) {
+            buffer.append(serial->readAll());
 
             // assume each sample = "[ch-id] [time-stamp] [val]\n"
             while (buffer.contains('\n')) {
@@ -78,5 +73,5 @@ void SerialThread::run() {
         }
     }
 
-    serial.close();
+    serial->close();
 }

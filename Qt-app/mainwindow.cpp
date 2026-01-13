@@ -154,7 +154,7 @@ MainWindow::MainWindow(QWidget *parent)
         c->series->attachAxis(c->axis);
     }
 
-    serialThread = new SerialThread(this);
+    serialThread = new SerialThread(this, "/dev/pts/2");
     connect(serialThread, &SerialThread::newSamples, this, [=](int channel, QVector<double> values, QVector<double> times) {
         channels[channel]->addPoints(times, values);
         if (writeStream != nullptr) {
@@ -193,7 +193,6 @@ void MainWindow::btnPlayStopHandler() {
         updatePlotTimer.start(updatePlotInterval_ms);
         updateNumericDisplayTimer.start(updateNumericDispalyInterval_ms);
         serialThread->start();
-        serialThread->reset();
         break;
 
     default:

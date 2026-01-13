@@ -13,11 +13,10 @@
 class SerialThread : public QThread {
     Q_OBJECT
 public:
-    SerialThread(QObject *parent = nullptr, QString port = "");
+    SerialThread(QObject *parent = nullptr, QString port = "/dev/pts/2");
     ~SerialThread();
 
     void stop();
-    void reset();
 
 signals:
     void newSamples(int channel, QVector<double> values, QVector<double> times);
@@ -26,7 +25,7 @@ protected:
     void run() override;
 
 private:
-    QSerialPort serial;
+    QSerialPort *serial;
     bool running = false;
     QVector<double> vals[2];
     QVector<double> times[2];
