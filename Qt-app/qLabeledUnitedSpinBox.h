@@ -13,12 +13,12 @@
 #include <QStringList>
 #include "math.h"
 
-class QLabeledUnitedDial : public QWidget {
+class QLabeledUnitedSpinBox : public QWidget {
     Q_OBJECT
 
 public:
-    QLabeledUnitedDial(const QString& labelText = "", const QString& unit = "", const QColor& color = Qt::black, bool acceptNegative = false, QWidget *parent = nullptr);
-    ~QLabeledUnitedDial();
+    QLabeledUnitedSpinBox(const QString& labelText = "", const QString& unit = "", const QColor& color = Qt::black, bool acceptNegative = false, QWidget *parent = nullptr);
+    ~QLabeledUnitedSpinBox();
     double getValue();
     void setValue(double val);
     void blockSignals(bool on);

@@ -41,9 +41,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     dispalyMinTime = 0;
     dispalyMaxTime = 2;
-    dialTimeRng = new QLabeledUnitedDial("Time Rng", "S", Qt::white, false, this);
+    dialTimeRng = new QLabeledUnitedSpinBox("Time Rng", "S", Qt::white, false, this);
     dialTimeRng->setValue(dispalyMaxTime - dispalyMinTime);
-    dialTimePos = new QLabeledUnitedDial("Time Pos", "S", Qt::white, false, this);
+    dialTimePos = new QLabeledUnitedSpinBox("Time Pos", "S", Qt::white, false, this);
     dialTimePos->setValue(dispalyMaxTime);
 
     boxSerialPort = new QLineEdit(this);
@@ -124,8 +124,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(btnSaveToFile, &QToolButton::clicked, this, &MainWindow::getFileToSaveTo);
     connect(btnReadFromFile, &QToolButton::clicked, this, &MainWindow::getFileToReadFrom);
     connect(btnAuto, &QPushButton::clicked, this, &MainWindow::btnAutoHandler);
-    connect(dialTimeRng, &QLabeledUnitedDial::valueChanged, this, &MainWindow::updateTimeRange);
-    connect(dialTimePos, &QLabeledUnitedDial::valueChanged, this, &MainWindow::updateTimeRange);
+    connect(dialTimeRng, &QLabeledUnitedSpinBox::valueChanged, this, &MainWindow::updateTimeRange);
+    connect(dialTimePos, &QLabeledUnitedSpinBox::valueChanged, this, &MainWindow::updateTimeRange);
     connect(channelTabs, &QTabWidget::currentChanged, this, &MainWindow::updateNumericDisplay);
 
     controlLayout->addWidget(boxSerialPort, 0, 0, 1, 5);
@@ -152,10 +152,10 @@ MainWindow::MainWindow(QWidget *parent)
         connect(channels[i]->btnOnOff, &QToolButton::clicked, this, [this, i]() {
             channels[i]->OnOffHandler();
         });
-        connect(channels[i]->dialRng, &QLabeledUnitedDial::valueChanged, this, [this, i]() {
+        connect(channels[i]->dialRng, &QLabeledUnitedSpinBox::valueChanged, this, [this, i]() {
             channels[i]->updateDisplayMiniMax();
         });
-        connect(channels[i]->dialPos, &QLabeledUnitedDial::valueChanged, this, [this, i]() {
+        connect(channels[i]->dialPos, &QLabeledUnitedSpinBox::valueChanged, this, [this, i]() {
             channels[i]->updateDisplayMiniMax();
         });
     }
@@ -191,8 +191,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     serialReader = new SerialReader();
     serialReader->moveToThread(serialThread);
-    connect(this, &MainWindow::serialEnable, serialReader, &SerialReader::run);
+    connect(this, &MainWindow::serialEnable, serialReader, &SerialReader::start);
     connect(this, &MainWindow::serialDisable, serialReader, &SerialReader::stop);
+    connect(serialThread, &QThread::started, serialReader, &SerialReader::loop);
     connect(serialThread, &QThread::destroyed, serialReader, &SerialReader::stop);
     connect(serialThread, &QThread::finished, serialReader, &SerialReader::stop);
     connect(serialReader, &SerialReader::newSamples, this, [=](int channel, QVector<double> values, QVector<double> times) {
@@ -218,7 +219,9 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow() {
     emit serialDisable();
     serialThread->quit();
-    serialThread->wait();
+    if (serialThread->wait(3000) == false) {
+        serialThread->terminate();
+    }
     writeFile->close();
 }
 

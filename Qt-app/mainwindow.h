@@ -70,7 +70,7 @@ private:
     QTextStream *writeStream, *readStream;
     QThread *serialThread;
     SerialReader *serialReader;
-    QLabeledUnitedDial *dialTimeRng, *dialTimePos;
+    QLabeledUnitedSpinBox *dialTimeRng, *dialTimePos;
     QChart *chart;
     QChartView *chartView;
     QValueAxis *timeAxis;

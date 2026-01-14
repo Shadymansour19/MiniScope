@@ -20,7 +20,7 @@
 #include <QValueAxis>
 #include <QCheckBox>
 #include <QToolButton>
-#include "qLabeledUnitedDial.h"
+#include "qLabeledUnitedSpinBox.h"
 #include "qUnitedAxis.h"
 
 
@@ -43,7 +43,7 @@ public:
     QToolButton *btnOnOff;
     QPen *pen;
     QIcon *icnOn, *icnOff;
-    QLabeledUnitedDial *dialPos, *dialRng;
+    QLabeledUnitedSpinBox *dialPos, *dialRng;
     qUnitedAxis *axis;
     QLineSeries *series;
     QWidget *tabWidget;

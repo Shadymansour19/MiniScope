@@ -7,6 +7,7 @@
 #include <QVector>
 #include <QPointF>
 #include <QElapsedTimer>
+#include <QEventLoop>
 // #include "mainwindow.h"
 
 
@@ -18,7 +19,8 @@ public:
 
     void setPort(QString port);
     void stop();
-    void run();
+    void start();
+    void loop();
 
 signals:
     void newSamples(int channel, QVector<double> values, QVector<double> times);
@@ -26,6 +28,7 @@ signals:
 private:
     QSerialPort *serial;
     bool running = false;
+    bool alive = true;
     QVector<double> vals[2];
     QVector<double> times[2];
 };

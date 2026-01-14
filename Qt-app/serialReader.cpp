@@ -5,11 +5,6 @@
 SerialReader::SerialReader(QString port) {
     serial = new QSerialPort(this);
     serial->setPortName(port);
-    serial->setBaudRate(QSerialPort::Baud115200);
-    serial->setDataBits(QSerialPort::Data8);
-    serial->setParity(QSerialPort::NoParity);
-    serial->setStopBits(QSerialPort::OneStop);
-    serial->setFlowControl(QSerialPort::NoFlowControl);
 }
 
 SerialReader::~SerialReader() {
@@ -21,25 +16,33 @@ void SerialReader::setPort(QString port) {
 }
 
 void SerialReader::stop() {
+    qDebug() << "stoping";
     running = false;
+    alive = false;
 }
 
-void SerialReader::run() {
+void SerialReader::start() {
+    qDebug() << "starting";
     if (!serial->open(QIODevice::ReadWrite)) {
         qWarning("Failed to open serial port!");
+        qDebug() << serial->isOpen() ;
         return;
     }
-
     serial->write("reset\n");
     running = true;
-    QByteArray buffer;
+}
 
-    while (running) {
-        if (serial->waitForReadyRead(50)) {
+void SerialReader::loop() {
+    qDebug() << "loop...";
+    QEventLoop lcoalLoop;
+    QByteArray buffer;
+    while (alive) {
+        lcoalLoop.processEvents();
+        if (running && serial->waitForReadyRead(50)) {
             buffer.append(serial->readAll());
 
             // each sample = "[ch-id] [time-stamp] [val]\n"
-            while (buffer.contains('\n')) {
+            while (buffer.contains('\n') && running) {
                 int newlineIndex = buffer.indexOf('\n');
                 QByteArray line = buffer.left(newlineIndex).trimmed();
                 buffer.remove(0, newlineIndex + 1);
@@ -68,9 +71,13 @@ void SerialReader::run() {
                     vals[1].clear();
                     times[1].clear();
                 }
+
+                lcoalLoop.processEvents();
             }
         }
     }
 
-    serial->close();
+    if (serial->isOpen()) {
+        serial->close();
+    }
 }

@@ -1,6 +1,6 @@
-#include "qLabeledUnitedDial.h"
+#include "qLabeledUnitedSpinBox.h"
 
-QLabeledUnitedDial::QLabeledUnitedDial(const QString& labelText, const QString& unit, const QColor& color, bool acceptNegative, QWidget *parent) : QWidget(parent) {
+QLabeledUnitedSpinBox::QLabeledUnitedSpinBox(const QString& labelText, const QString& unit, const QColor& color, bool acceptNegative, QWidget *parent) : QWidget(parent) {
     for (auto i = 0; i < factorsText.length(); i++) {
         factorsText[i] += unit;
     }
@@ -32,29 +32,29 @@ QLabeledUnitedDial::QLabeledUnitedDial(const QString& labelText, const QString& 
     valLayout->addWidget(spinBox, 0, Qt::AlignRight);
     valLayout->addWidget(unitSelector, 0, Qt::AlignLeft);
 
-    connect(spinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &QLabeledUnitedDial::valueChangeHandler);
+    connect(spinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &QLabeledUnitedSpinBox::valueChangeHandler);
     connect(unitSelector, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [=]() {
         emit valueChanged(getValue());
     });
 }
 
-QLabeledUnitedDial::~QLabeledUnitedDial() {
+QLabeledUnitedSpinBox::~QLabeledUnitedSpinBox() {
     delete label;
     delete spinBox;
     delete unitSelector;
 }
 
-void QLabeledUnitedDial::blockSignals(bool on) {
+void QLabeledUnitedSpinBox::blockSignals(bool on) {
     spinBox->blockSignals(on);
     unitSelector->blockSignals(on);
 }
 
-void QLabeledUnitedDial::setEnabled(bool on) {
+void QLabeledUnitedSpinBox::setEnabled(bool on) {
     spinBox->setEnabled(on);
     unitSelector->setEnabled(on);
 }
 
-void QLabeledUnitedDial::valueChangeHandler() {
+void QLabeledUnitedSpinBox::valueChangeHandler() {
     blockSignals(true);
     auto val = spinBox->value();
     auto i = unitSelector->currentIndex();
@@ -74,11 +74,11 @@ void QLabeledUnitedDial::valueChangeHandler() {
     emit valueChanged(val * factorsVal[i]);
 }
 
-double QLabeledUnitedDial::getValue() {
+double QLabeledUnitedSpinBox::getValue() {
     return spinBox->value() * factorsVal[unitSelector->currentIndex()];
 }
 
-void QLabeledUnitedDial::setValue(double val) {
+void QLabeledUnitedSpinBox::setValue(double val) {
     for (int i = 0; i < factorsVal.length(); i++) {
         if (val / factorsVal[i] < 1e3) {
             blockSignals(true);

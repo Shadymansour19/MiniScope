@@ -33,10 +33,10 @@ Channel::Channel(int id_, const QColor& color_, QChart* chart, QWidget *parentWi
     axis->setLabelsColor(color);
     axis->setTickCount(5);
 
-    dialRng = new QLabeledUnitedDial(label + " Rng", "V", color, false, parentWidget);
+    dialRng = new QLabeledUnitedSpinBox(label + " Rng", "V", color, false, parentWidget);
     dialRng->setValue(2);
 
-    dialPos = new QLabeledUnitedDial(label + " Pos", "V", color, true, parentWidget);
+    dialPos = new QLabeledUnitedSpinBox(label + " Pos", "V", color, true, parentWidget);
     dialPos->setValue(0);
 
     QFrame *separator = new QFrame();
