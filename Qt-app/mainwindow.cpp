@@ -5,6 +5,9 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent) {
 
+    awesome = new fa::QtAwesome(this);
+    awesome->initFontAwesome();
+
     currentState = stopped;
     recording = false;
     writeFile = nullptr;
@@ -31,8 +34,8 @@ MainWindow::MainWindow(QWidget *parent)
     legendFont.setPointSize(16);
     legend->setFont(legendFont);
 
-    channels[0] = new Channel(1, Qt::yellow, chart, this);
-    channels[1] = new Channel(2, QColor("#2FD9D4"), chart, this);
+    channels[0] = new Channel(1, Qt::yellow, chart, awesome, this);
+    channels[1] = new Channel(2, QColor("#2FD9D4"), chart, awesome, this);
 
     chartView = new QChartView(chart);
     chartView->setRenderHint(QPainter::Antialiasing);
@@ -54,12 +57,15 @@ MainWindow::MainWindow(QWidget *parent)
     btnReadFromFile = new QToolButton(this);
     btnAuto = new QPushButton("AUTO");
 
-    icnPlay = style()->standardIcon(QStyle::SP_MediaPlay);
-    icnStop = style()->standardIcon(QStyle::SP_MediaStop);
-    icnPause = style()->standardIcon(QStyle::SP_MediaPause);
-    icnRefresh = style()->standardIcon(QStyle::SP_BrowserReload);
-    icnSave = style()->standardIcon(QStyle::SP_DialogSaveButton);
-    icnReadFile = style()->standardIcon(QStyle::SP_DirOpenIcon);
+    QVariantMap btnOpts;
+    btnOpts["color"] = QColor(Qt::white);
+    btnOpts["color-disabled"] = QColor("#555555");
+    icnPlay    = awesome->icon(fa::fa_solid, fa::fa_play,        btnOpts);
+    icnStop    = awesome->icon(fa::fa_solid, fa::fa_stop,        btnOpts);
+    icnPause   = awesome->icon(fa::fa_solid, fa::fa_pause,       btnOpts);
+    icnRefresh = awesome->icon(fa::fa_solid, fa::fa_sync,    btnOpts);
+    icnSave    = awesome->icon(fa::fa_solid, fa::fa_save,        btnOpts);
+    icnReadFile = awesome->icon(fa::fa_solid, fa::fa_folder_open, btnOpts);
 
     boxSerialPort->setPlaceholderText("Serial Port");
     boxSerialPort->setToolTip("Serial Port");

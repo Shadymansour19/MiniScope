@@ -22,6 +22,7 @@
 #include <QToolButton>
 #include "qLabeledUnitedSpinBox.h"
 #include "qUnitedAxis.h"
+#include "QtAwesome.h"
 
 
 // std::valarray-based Cooley-Tukey FFT
@@ -42,14 +43,14 @@ public:
     QLabel *lblAmplitude, *lblDcLevel, *lblFreq, *lblPeriod;
     QToolButton *btnOnOff;
     QPen *pen;
-    QIcon *icnOn, *icnOff;
+    QIcon icnOn, icnOff;
     QLabeledUnitedSpinBox *dialPos, *dialRng;
     qUnitedAxis *axis;
     QLineSeries *series;
     QWidget *tabWidget;
     QVector<QPointF> pts;
 
-    Channel(int id_, const QColor& color_, QChart *chart, QWidget *parentWidget = nullptr);
+    Channel(int id_, const QColor& color_, QChart *chart, fa::QtAwesome *awesome, QWidget *parentWidget = nullptr);
     void addPoints(const QVector<double>& times, const QVector<double>& vals);
     void analyze();
     void clear();

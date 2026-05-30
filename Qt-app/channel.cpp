@@ -2,7 +2,7 @@
 #include <algorithm>
 
 
-Channel::Channel(int id_, const QColor& color_, QChart* chart, QWidget *parentWidget)
+Channel::Channel(int id_, const QColor& color_, QChart* chart, fa::QtAwesome *awesome, QWidget *parentWidget)
     : id(id_), color(color_), isActive(true),
     displayMinY(-1.0), displayMaxY(1.0), amplitude(0), frequency(0), period(0) {
     label = QString::fromStdString("CH" + std::to_string(id));
@@ -16,11 +16,18 @@ Channel::Channel(int id_, const QColor& color_, QChart* chart, QWidget *parentWi
     lblFreq->setStyleSheet(colorStyle);
     lblPeriod->setStyleSheet(colorStyle);
     lblDcLevel->setStyleSheet(colorStyle);
-    icnOn = new QIcon(":/icons/icon-on.png");
-    icnOff = new QIcon(":/icons/icon-off.png");
+    QVariantMap onOpts;
+    onOpts["color"] = color;
+    onOpts["color-disabled"] = QColor("#555555");
+    icnOn = awesome->icon(fa::fa_solid, fa::fa_wave_square, onOpts);
+
+    QVariantMap offOpts;
+    offOpts["color"] = QColor("#555555");
+    icnOff = awesome->icon(fa::fa_solid, fa::fa_wave_square, offOpts);
+
     btnOnOff = new QToolButton(parentWidget);
     btnOnOff->setAutoRaise(true);
-    btnOnOff->setIcon(*icnOn);
+    btnOnOff->setIcon(icnOn);
     btnOnOff->setIconSize(QSize(48, 48));
     series = new QLineSeries();
     series->setName(label);
@@ -61,7 +68,7 @@ Channel::Channel(int id_, const QColor& color_, QChart* chart, QWidget *parentWi
 
 void Channel::enableUI() {
     btnOnOff->setEnabled(true);
-    btnOnOff->setIcon(*icnOn);
+    btnOnOff->setIcon(icnOn);
     btnOnOff->setChecked(true);
     dialPos->setEnabled(true);
     dialRng->setEnabled(true);
@@ -103,9 +110,9 @@ void Channel::OnOffHandler() {
     lblPeriod->setVisible(isActive);
     lblDcLevel->setVisible(isActive);
     if (isActive) {
-        btnOnOff->setIcon(*icnOn);
+        btnOnOff->setIcon(icnOn);
     } else {
-        btnOnOff->setIcon(*icnOff);
+        btnOnOff->setIcon(icnOff);
     }
 }
 

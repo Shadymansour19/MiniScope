@@ -24,6 +24,7 @@
 #include <QDebug>
 #include <QLineEdit>
 #include "serialReader.h"
+#include "QtAwesome.h"
 
 
 QT_BEGIN_NAMESPACE
@@ -79,6 +80,7 @@ private:
     QToolButton *btnPlayStop, *btnPauseResume, *btnRefresh, *btnSaveToFile, *btnReadFromFile;
     QPushButton *btnAuto;
     QIcon icnPlay, icnStop, icnPause, icnRefresh, icnSave, icnReadFile;
+    fa::QtAwesome *awesome;
     QShortcut *saveShortcut, *loadShortcut;
     QTabWidget *channelTabs;
     Channel *(channels[NUM_CHS]);
