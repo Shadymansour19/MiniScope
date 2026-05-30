@@ -36,7 +36,7 @@ class MainWindow : public QMainWindow {
 
 public:
     const static int NUM_CHS = 2;
-    MainWindow(QWidget *parent = nullptr);
+    MainWindow(const QString &port = QString(), QWidget *parent = nullptr);
     ~MainWindow();
     const int updatePlotInterval_ms = 30;
     const int updateNumericDisplayInterval_ms = 1000;

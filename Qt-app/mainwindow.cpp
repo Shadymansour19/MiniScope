@@ -2,7 +2,7 @@
 #include <QRandomGenerator>
 #include <cmath>
 
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(const QString &port, QWidget *parent)
     : QMainWindow(parent) {
 
     awesome = new fa::QtAwesome(this);
@@ -68,6 +68,24 @@ MainWindow::MainWindow(QWidget *parent)
     icnReadFile = awesome->icon(fa::fa_solid, fa::fa_folder_open, btnOpts);
 
     boxSerialPort->setPlaceholderText("Serial Port");
+    if (port.isEmpty()) {
+        boxSerialPort->setText("/dev/tty");
+        for (auto &portInfo : QSerialPortInfo::availablePorts()) {
+            if (portInfo.manufacturer() == "STMicroelectronics" || portInfo.description() == "STM32 Virtual ComPort") {
+                boxSerialPort->setText(portInfo.systemLocation());
+                break;
+            }
+            // qDebug() << "Port Name:" << portInfo.portName();
+            // qDebug() << "System Location:" << portInfo.systemLocation();
+            // qDebug() << "Description:" << portInfo.description();
+            // qDebug() << "Manufacturer:" << portInfo.manufacturer();
+            // qDebug() << "Vendor Identifier:" << (portInfo.hasVendorIdentifier() ? QByteArray::number(portInfo.vendorIdentifier(), 16) : "N/A");
+            // qDebug() << "Product Identifier:" << (portInfo.hasProductIdentifier() ? QByteArray::number(portInfo.productIdentifier(), 16) : "N/A");
+            // qDebug() << "-----------------------------------------";
+        }
+    } else {
+        boxSerialPort->setText(port);
+    }
     boxSerialPort->setToolTip("Serial Port");
     boxSerialPort->setStyleSheet(
         "QLineEdit {"
@@ -182,22 +200,6 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     serialThread = new QThread(this);
-
-    boxSerialPort->setText("/dev/tty");
-    for (auto &portInfo : QSerialPortInfo::availablePorts()) {
-        if (portInfo.manufacturer() == "STMicroelectronics" || portInfo.description() == "STM32 Virtual ComPort") {
-            boxSerialPort->setText(portInfo.systemLocation());
-            break;
-        }
-        // qDebug() << "Port Name:" << portInfo.portName();
-        // qDebug() << "System Location:" << portInfo.systemLocation();
-        // qDebug() << "Description:" << portInfo.description();
-        // qDebug() << "Manufacturer:" << portInfo.manufacturer();
-        // qDebug() << "Vendor Identifier:" << (portInfo.hasVendorIdentifier() ? QByteArray::number(portInfo.vendorIdentifier(), 16) : "N/A");
-        // qDebug() << "Product Identifier:" << (portInfo.hasProductIdentifier() ? QByteArray::number(portInfo.productIdentifier(), 16) : "N/A");
-        // qDebug() << "-----------------------------------------";
-    }
-
     serialReader = new SerialReader();
     serialReader->moveToThread(serialThread);
     connect(this, &MainWindow::serialEnable, serialReader, &SerialReader::start);
@@ -225,6 +227,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(&updatePlotTimer, &QTimer::timeout, this, &MainWindow::updatePlot);
     connect(&updateNumericDisplayTimer, &QTimer::timeout, this, &MainWindow::updateNumericDisplay);
     setCentralWidget(central);
+
+    if (!port.isEmpty()) {
+        QTimer::singleShot(0, this, &MainWindow::btnPlayStopHandler);
+    }
 }
 
 MainWindow::~MainWindow() {
