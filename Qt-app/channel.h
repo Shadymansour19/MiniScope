@@ -38,7 +38,7 @@ public:
     bool isActive;
     QString label;
     QColor color;
-    double dispalyMinY, dispalyMaxY, amplitude, dcLevel, frequency, period;
+    double displayMinY, displayMaxY, amplitude, dcLevel, frequency, period;
     QLabel *lblAmplitude, *lblDcLevel, *lblFreq, *lblPeriod;
     QToolButton *btnOnOff;
     QPen *pen;

@@ -4,7 +4,7 @@
 
 Channel::Channel(int id_, const QColor& color_, QChart* chart, QWidget *parentWidget)
     : id(id_), color(color_), isActive(true),
-    dispalyMinY(-1.0), dispalyMaxY(1.0), amplitude(0), frequency(0), period(0) {
+    displayMinY(-1.0), displayMaxY(1.0), amplitude(0), frequency(0), period(0) {
     label = QString::fromStdString("CH" + std::to_string(id));
     auto colorStyle = "color: " + color.name();
 
@@ -79,9 +79,9 @@ void Channel::addPoints(const QVector<double>& times, const QVector<double>& val
 void Channel::clear() {
     pts.clear();
     series->clear();
-    dispalyMinY = -1;
-    dispalyMaxY = 1;
-    axis->setRange(dispalyMinY, dispalyMaxY);
+    displayMinY = -1;
+    displayMaxY = 1;
+    axis->setRange(displayMinY, displayMaxY);
 }
 
 void Channel::reset() {
@@ -112,9 +112,9 @@ void Channel::OnOffHandler() {
 void Channel::updateDisplayMiniMax() {
     auto rng = dialRng->getValue();
     auto pos = dialPos->getValue();
-    dispalyMinY = pos - rng / 2.0;
-    dispalyMaxY = pos + rng / 2.0;
-    axis->setRange(dispalyMinY, dispalyMaxY);
+    displayMinY = pos - rng / 2.0;
+    displayMaxY = pos + rng / 2.0;
+    axis->setRange(displayMinY, displayMaxY);
 }
 
 QString Channel::formatNum(double num) {
@@ -134,21 +134,21 @@ QString Channel::formatNum(double num) {
 
 void Channel::autoScale() {
     analyze();
-    dispalyMinY = std::numeric_limits<double>::max();
-    dispalyMaxY = std::numeric_limits<double>::min();
+    displayMinY = std::numeric_limits<double>::max();
+    displayMaxY = std::numeric_limits<double>::min();
     for (auto& p : pts) {
-        dispalyMinY = std::min(dispalyMinY, p.y());
-        dispalyMaxY = std::max(dispalyMaxY, p.y());
+        displayMinY = std::min(displayMinY, p.y());
+        displayMaxY = std::max(displayMaxY, p.y());
     }
 
-    auto pos = (dispalyMaxY + dispalyMinY) / 2;
-    auto rng = (dispalyMaxY - dispalyMinY) * 1.4;
+    auto pos = (displayMaxY + displayMinY) / 2;
+    auto rng = (displayMaxY - displayMinY) * 1.4;
     if (rng == 0) {
         rng = 1.0;
     }
 
-    dispalyMinY = pos - rng / 2;
-    dispalyMaxY = pos + rng / 2;
+    displayMinY = pos - rng / 2;
+    displayMaxY = pos + rng / 2;
 
     dialRng->setValue(rng);
     dialPos->setValue(pos);

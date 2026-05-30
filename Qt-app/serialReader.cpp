@@ -16,7 +16,7 @@ void SerialReader::setPort(QString port) {
 }
 
 void SerialReader::stop() {
-    qDebug() << "stoping";
+    qDebug() << "stopping";
     running = false;
     alive = false;
 }
@@ -34,10 +34,10 @@ void SerialReader::start() {
 
 void SerialReader::loop() {
     qDebug() << "loop...";
-    QEventLoop lcoalLoop;
+    QEventLoop localLoop;
     QByteArray buffer;
     while (alive) {
-        lcoalLoop.processEvents();
+        localLoop.processEvents();
         if (running && serial->waitForReadyRead(50)) {
             buffer.append(serial->readAll());
 
@@ -56,11 +56,12 @@ void SerialReader::loop() {
                 double val = 0.0;
                 double tim = 0.0;
                 ts >> ch >> tim >> val;
+                qDebug() << ch << tim << val;
 
                 vals[ch].append(val);
                 times[ch].append(tim);
 
-                // tx 100 samples as chunck
+                // tx 100 samples as chunk
                 if (vals[0].size() >= 100) {
                     emit newSamples(0, vals[0], times[0]);
                     vals[0].clear();
@@ -72,7 +73,7 @@ void SerialReader::loop() {
                     times[1].clear();
                 }
 
-                lcoalLoop.processEvents();
+                localLoop.processEvents();
             }
         }
     }

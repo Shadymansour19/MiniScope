@@ -5,7 +5,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent) {
 
-    currentState = stoped;
+    currentState = stopped;
     recording = false;
     writeFile = nullptr;
     writeStream = nullptr;
@@ -39,12 +39,12 @@ MainWindow::MainWindow(QWidget *parent)
     mainLayout->addWidget(chartView);
     mainLayout->addLayout(controlLayout);
 
-    dispalyMinTime = 0;
-    dispalyMaxTime = 2;
+    displayMinTime = 0;
+    displayMaxTime = 2;
     dialTimeRng = new QLabeledUnitedSpinBox("Time Rng", "S", Qt::white, false, this);
-    dialTimeRng->setValue(dispalyMaxTime - dispalyMinTime);
+    dialTimeRng->setValue(displayMaxTime - displayMinTime);
     dialTimePos = new QLabeledUnitedSpinBox("Time Pos", "S", Qt::white, false, this);
-    dialTimePos->setValue(dispalyMaxTime);
+    dialTimePos->setValue(displayMaxTime);
 
     boxSerialPort = new QLineEdit(this);
     btnPlayStop = new QToolButton(this);
@@ -177,17 +177,20 @@ MainWindow::MainWindow(QWidget *parent)
 
     serialThread = new QThread(this);
 
-    // auto serialPortInfos = QSerialPortInfo::availablePorts();
-    // for (const QSerialPortInfo &portInfo : serialPortInfos) {
-    //     qDebug() << "Port Name:" << portInfo.portName();
-    //     qDebug() << "System Location:" << portInfo.systemLocation();
-    //     qDebug() << "Description:" << portInfo.description();
-    //     qDebug() << "Manufacturer:" << portInfo.manufacturer();
-    //     qDebug() << "Vendor Identifier:" << (portInfo.hasVendorIdentifier() ? QByteArray::number(portInfo.vendorIdentifier(), 16) : "N/A");
-    //     qDebug() << "Product Identifier:" << (portInfo.hasProductIdentifier() ? QByteArray::number(portInfo.productIdentifier(), 16) : "N/A");
-    //     qDebug() << "-----------------------------------------";
-    // }
-
+    boxSerialPort->setText("/dev/tty");
+    for (auto &portInfo : QSerialPortInfo::availablePorts()) {
+        if (portInfo.manufacturer() == "STMicroelectronics" || portInfo.description() == "STM32 Virtual ComPort") {
+            boxSerialPort->setText(portInfo.systemLocation());
+            break;
+        }
+        // qDebug() << "Port Name:" << portInfo.portName();
+        // qDebug() << "System Location:" << portInfo.systemLocation();
+        // qDebug() << "Description:" << portInfo.description();
+        // qDebug() << "Manufacturer:" << portInfo.manufacturer();
+        // qDebug() << "Vendor Identifier:" << (portInfo.hasVendorIdentifier() ? QByteArray::number(portInfo.vendorIdentifier(), 16) : "N/A");
+        // qDebug() << "Product Identifier:" << (portInfo.hasProductIdentifier() ? QByteArray::number(portInfo.productIdentifier(), 16) : "N/A");
+        // qDebug() << "-----------------------------------------";
+    }
 
     serialReader = new SerialReader();
     serialReader->moveToThread(serialThread);
@@ -197,7 +200,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(serialThread, &QThread::destroyed, serialReader, &SerialReader::stop);
     connect(serialThread, &QThread::finished, serialReader, &SerialReader::stop);
     connect(serialReader, &SerialReader::newSamples, this, [=](int channel, QVector<double> values, QVector<double> times) {
-        if (currentState == stoped) {
+        if (currentState == stopped) {
             return;
         }
 
@@ -228,7 +231,7 @@ MainWindow::~MainWindow() {
 
 void MainWindow::btnPlayStopHandler() {
     switch (currentState) {
-    case stoped:
+    case stopped:
     case offline:
         currentState = running;
         btnPlayStop->setIcon(icnStop);
@@ -244,21 +247,21 @@ void MainWindow::btnPlayStopHandler() {
         dialTimeRng->setEnabled(true);
         dialTimePos->setEnabled(false);
         updatePlotTimer.start(updatePlotInterval_ms);
-        updateNumericDisplayTimer.start(updateNumericDispalyInterval_ms);
+        updateNumericDisplayTimer.start(updateNumericDisplayInterval_ms);
         emit serialEnable();
         break;
 
     default:
-        currentState = stoped;
+        currentState = stopped;
         btnPlayStop->setIcon(icnPlay);
         btnPlayStop->setToolTip("Play");
         btnPauseResume->setIcon(icnPause);
         btnPauseResume->setToolTip("Pause");
         channels[0]->reset();
         channels[1]->reset();
-        dispalyMinTime = 0;
-        dispalyMaxTime = 2;
-        timeAxis->setRange(dispalyMinTime, dispalyMaxTime);
+        displayMinTime = 0;
+        displayMaxTime = 2;
+        timeAxis->setRange(displayMinTime, displayMaxTime);
         btnPauseResume->setEnabled(false);
         btnRefresh->setEnabled(false);
         btnAuto->setEnabled(false);
@@ -294,7 +297,7 @@ void MainWindow::btnPauseResumeHandler() {
         btnPauseResume->setIcon(icnPause);
         btnPauseResume->setToolTip("Pause");
         updatePlotTimer.start(updatePlotInterval_ms);
-        updateNumericDisplayTimer.start(updateNumericDispalyInterval_ms);
+        updateNumericDisplayTimer.start(updateNumericDisplayInterval_ms);
         dialTimePos->setEnabled(false);
         btnRefresh->setEnabled(false);
         break;
@@ -302,11 +305,11 @@ void MainWindow::btnPauseResumeHandler() {
 }
 
 void MainWindow::btnRefreshHandler() {
-    dispalyMaxTime = std::max(
+    displayMaxTime = std::max(
         channels[0]->pts.empty() ? 0 : channels[0]->pts.back().x(),
         channels[1]->pts.empty() ? 0 : channels[1]->pts.back().x()
     );
-    dialTimePos->setValue(dispalyMaxTime);
+    dialTimePos->setValue(displayMaxTime);
     updatePlot();
     updateNumericDisplay();
 }
@@ -374,14 +377,14 @@ void MainWindow::btnAutoHandler() {
         timeRng = 4 * std::max(p1, p2);
     }
     dialTimeRng->setValue(timeRng);
-    dispalyMinTime = std::max(0.0, dispalyMaxTime - dialTimeRng->getValue());
-    timeAxis->setMin(dispalyMinTime);
+    displayMinTime = std::max(0.0, displayMaxTime - dialTimeRng->getValue());
+    timeAxis->setMin(displayMinTime);
 }
 
 void MainWindow::updateTimeRange() {
-    dispalyMaxTime = dialTimePos->getValue();
-    dispalyMinTime = std::max(0.0, dispalyMaxTime - dialTimeRng->getValue());
-    timeAxis->setRange(dispalyMinTime, dispalyMaxTime);
+    displayMaxTime = dialTimePos->getValue();
+    displayMinTime = std::max(0.0, displayMaxTime - dialTimeRng->getValue());
+    timeAxis->setRange(displayMinTime, displayMaxTime);
     updatePlot();
 }
 
@@ -400,7 +403,7 @@ void MainWindow::updatePlot() {
         readFile->reset();
         while (!readStream->atEnd()) {
             *readStream >> ch >> val >> tim;
-            if (tim >= dispalyMinTime && tim <= dispalyMaxTime) {
+            if (tim >= displayMinTime && tim <= displayMaxTime) {
                 vals[ch].append(val);
                 tims[ch].append(tim);
                 if (vals[ch].size() >= 1000) {
@@ -414,15 +417,15 @@ void MainWindow::updatePlot() {
         channels[1]->addPoints(tims[1], vals[1]);
         setCursor(Qt::ArrowCursor);
     } else if (currentState == running) {
-        dispalyMaxTime = std::max(
+        displayMaxTime = std::max(
             channels[0]->pts.empty() ? 0 : channels[0]->pts.back().x(),
             channels[1]->pts.empty() ? 0 : channels[1]->pts.back().x()
         );
-        dialTimePos->setValue(dispalyMaxTime);
+        dialTimePos->setValue(displayMaxTime);
     }
 
     channels[0]->series->replace(channels[0]->pts);
     channels[1]->series->replace(channels[1]->pts);
-    dispalyMinTime = std::max(0.0, dispalyMaxTime - dialTimeRng->getValue());
-    timeAxis->setRange(dispalyMinTime, dispalyMaxTime);
+    displayMinTime = std::max(0.0, displayMaxTime - dialTimeRng->getValue());
+    timeAxis->setRange(displayMinTime, displayMaxTime);
 }

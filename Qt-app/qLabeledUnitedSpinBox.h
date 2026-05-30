@@ -35,7 +35,7 @@ private:
     void valueChangeHandler();
 
 signals:
-    void valueChanged(double newVlaue);
+    void valueChanged(double newValue);
 };
 
 #endif // QLABELEDDIAL_H

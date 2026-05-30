@@ -1,5 +1,5 @@
-#ifndef SERIAALTHREAD_H
-#define SERIAALTHREAD_H
+#ifndef SERIALTHREAD_H
+#define SERIALTHREAD_H
 
 
 #include <QThread>
@@ -34,4 +34,4 @@ private:
 };
 
 
-#endif // SERIAALTHREAD_H
+#endif // SERIALTHREAD_H

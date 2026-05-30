@@ -25,9 +25,9 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         channel.h channel.cpp
-        qLabeledUnitedDial.h qLabeledUnitedDial.cpp
+        qLabeledUnitedSpinBox.h qLabeledUnitedSpinBox.cpp
         qUnitedAxis.h qUnitedAxis.cpp
-        serialthread.h serialthread.cpp
+        serialReader.h serialReader.cpp
         resources.qrc
     )
 # Define target properties for Android with Qt 6 as:

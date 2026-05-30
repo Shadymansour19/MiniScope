@@ -38,10 +38,10 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
     const int updatePlotInterval_ms = 30;
-    const int updateNumericDispalyInterval_ms = 1000;
+    const int updateNumericDisplayInterval_ms = 1000;
 
     enum State {
-        stoped,
+        stopped,
         running,
         paused,
         offline
@@ -63,7 +63,7 @@ private slots:
     void updateTimeRange();
 
 private:
-    double dispalyMinTime, dispalyMaxTime;
+    double displayMinTime, displayMaxTime;
     State currentState;
     bool recording;
     QFile *writeFile, *readFile;
