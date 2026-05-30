@@ -131,7 +131,7 @@ QString Channel::formatNum(double num) {
         return "0.0 ";
     }
     int i = 0;
-    double absNum = abs(num);
+    double absNum = std::fabs(num);
     while (i+1 < factorsVal.length() && absNum / factorsVal[i] >= 1e3) {
         i++;
     }
@@ -142,7 +142,7 @@ QString Channel::formatNum(double num) {
 void Channel::autoScale() {
     analyze();
     displayMinY = std::numeric_limits<double>::max();
-    displayMaxY = std::numeric_limits<double>::min();
+    displayMaxY = std::numeric_limits<double>::lowest();
     for (auto& p : pts) {
         displayMinY = std::min(displayMinY, p.y());
         displayMaxY = std::max(displayMaxY, p.y());
@@ -199,7 +199,7 @@ void Channel::analyze() {
     N = pow2>>1;
 
     std::vector<double> time(N), vals(N);
-    double maxVal = std::numeric_limits<double>::min();
+    double maxVal = std::numeric_limits<double>::lowest();
     double minVal = std::numeric_limits<double>::max();
     double sumVals = 0;
     for (int i = 0; i < N; i++) {

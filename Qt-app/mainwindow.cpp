@@ -202,11 +202,13 @@ MainWindow::MainWindow(QWidget *parent)
     serialReader->moveToThread(serialThread);
     connect(this, &MainWindow::serialEnable, serialReader, &SerialReader::start);
     connect(this, &MainWindow::serialDisable, serialReader, &SerialReader::stop);
-    connect(serialThread, &QThread::started, serialReader, &SerialReader::loop);
     connect(serialThread, &QThread::destroyed, serialReader, &SerialReader::stop);
     connect(serialThread, &QThread::finished, serialReader, &SerialReader::stop);
     connect(serialReader, &SerialReader::newSamples, this, [=](int channel, QVector<double> values, QVector<double> times) {
         if (currentState == stopped) {
+            return;
+        }
+        if (channel < 0 || channel >= NUM_CHS) {
             return;
         }
 
@@ -411,6 +413,9 @@ void MainWindow::updatePlot() {
         readFile->reset();
         while (!readStream->atEnd()) {
             *readStream >> ch >> val >> tim;
+            if (ch < 0 || ch >= NUM_CHS) {
+                continue;
+            }
             if (tim >= displayMinTime && tim <= displayMaxTime) {
                 vals[ch].append(val);
                 tims[ch].append(tim);

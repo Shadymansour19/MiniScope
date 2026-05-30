@@ -1,10 +1,12 @@
 #include "serialReader.h"
-#include <QDateTime>
 #include <QTextStream>
+#include <QDebug>
 
 SerialReader::SerialReader(QString port) {
     serial = new QSerialPort(this);
     serial->setPortName(port);
+    serial->setBaudRate(QSerialPort::Baud115200);
+    connect(serial, &QSerialPort::readyRead, this, &SerialReader::onReadyRead);
 }
 
 SerialReader::~SerialReader() {
@@ -15,70 +17,70 @@ void SerialReader::setPort(QString port) {
     serial->setPortName(port);
 }
 
-void SerialReader::stop() {
-    qDebug() << "stopping";
-    running = false;
-    alive = false;
-}
-
 void SerialReader::start() {
-    qDebug() << "starting";
-    if (!serial->open(QIODevice::ReadWrite)) {
-        qWarning("Failed to open serial port!");
-        qDebug() << serial->isOpen() ;
+    if (serial->isOpen()) {
         return;
     }
+    if (!serial->open(QIODevice::ReadWrite)) {
+        qWarning() << "Failed to open serial port" << serial->portName() << ":" << serial->errorString();
+        return;
+    }
+    // start from a clean slate so a stop/start cycle does not leak stale samples
+    buffer.clear();
+    for (int ch = 0; ch < NUM_CHS; ch++) {
+        vals[ch].clear();
+        times[ch].clear();
+    }
     serial->write("reset\n");
-    running = true;
 }
 
-void SerialReader::loop() {
-    qDebug() << "loop...";
-    QEventLoop localLoop;
-    QByteArray buffer;
-    while (alive) {
-        localLoop.processEvents();
-        if (running && serial->waitForReadyRead(50)) {
-            buffer.append(serial->readAll());
-
-            // each sample = "[ch-id] [time-stamp] [val]\n"
-            while (buffer.contains('\n') && running) {
-                int newlineIndex = buffer.indexOf('\n');
-                QByteArray line = buffer.left(newlineIndex).trimmed();
-                buffer.remove(0, newlineIndex + 1);
-
-                if (line.isEmpty()) {
-                    continue;
-                }
-
-                QTextStream ts(line);
-                int ch = 0;
-                double val = 0.0;
-                double tim = 0.0;
-                ts >> ch >> tim >> val;
-                qDebug() << ch << tim << val;
-
-                vals[ch].append(val);
-                times[ch].append(tim);
-
-                // tx 100 samples as chunk
-                if (vals[0].size() >= 100) {
-                    emit newSamples(0, vals[0], times[0]);
-                    vals[0].clear();
-                    times[0].clear();
-                }
-                if (vals[1].size() >= 100) {
-                    emit newSamples(1, vals[1], times[1]);
-                    vals[1].clear();
-                    times[1].clear();
-                }
-
-                localLoop.processEvents();
-            }
-        }
-    }
-
+void SerialReader::stop() {
     if (serial->isOpen()) {
         serial->close();
     }
+    buffer.clear();
+}
+
+void SerialReader::onReadyRead() {
+    buffer.append(serial->readAll());
+
+    // each sample line = "[ch-id] [time-stamp] [val]\n"; a trailing partial line
+    // (no '\n' yet) is left in the buffer for the next readyRead.
+    int newlineIndex;
+    while ((newlineIndex = buffer.indexOf('\n')) != -1) {
+        QByteArray line = buffer.left(newlineIndex).trimmed();
+        buffer.remove(0, newlineIndex + 1);
+
+        if (line.isEmpty()) {
+            continue;
+        }
+
+        QTextStream ts(line);
+        int ch = -1;
+        double tim = 0.0;
+        double val = 0.0;
+        ts >> ch >> tim >> val;
+
+        // drop malformed lines and out-of-range channel ids (prevents OOB writes)
+        if (ts.status() != QTextStream::Ok || ch < 0 || ch >= NUM_CHS) {
+            continue;
+        }
+
+        vals[ch].append(val);
+        times[ch].append(tim);
+
+        // tx 100 samples as a chunk
+        if (vals[ch].size() >= 100) {
+            flush(ch);
+        }
+    }
+}
+
+void SerialReader::flush(int ch) {
+    if (vals[ch].isEmpty()) {
+        return;
+    }
+    emit newSamples(ch, vals[ch], times[ch]);
+    vals[ch].clear();
+    times[ch].clear();
 }
