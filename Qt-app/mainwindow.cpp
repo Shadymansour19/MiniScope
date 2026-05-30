@@ -63,7 +63,7 @@ MainWindow::MainWindow(QWidget *parent)
     icnPlay    = awesome->icon(fa::fa_solid, fa::fa_play,        btnOpts);
     icnStop    = awesome->icon(fa::fa_solid, fa::fa_stop,        btnOpts);
     icnPause   = awesome->icon(fa::fa_solid, fa::fa_pause,       btnOpts);
-    icnRefresh = awesome->icon(fa::fa_solid, fa::fa_sync,    btnOpts);
+    icnRefresh = awesome->icon(fa::fa_solid, fa::fa_sync,        btnOpts);
     icnSave    = awesome->icon(fa::fa_solid, fa::fa_save,        btnOpts);
     icnReadFile = awesome->icon(fa::fa_solid, fa::fa_folder_open, btnOpts);
 
@@ -231,7 +231,9 @@ MainWindow::~MainWindow() {
     if (serialThread->wait(3000) == false) {
         serialThread->terminate();
     }
-    writeFile->close();
+    if (writeFile) {
+        writeFile->close();
+    }
 }
 
 
