@@ -57,15 +57,19 @@ MainWindow::MainWindow(const QString &port, QWidget *parent)
     btnReadFromFile = new QToolButton(this);
     btnAuto = new QPushButton("AUTO");
 
-    QVariantMap btnOpts;
-    btnOpts["color"] = QColor(Qt::white);
-    btnOpts["color-disabled"] = QColor("#555555");
-    icnPlay    = awesome->icon(fa::fa_solid, fa::fa_play,        btnOpts);
-    icnStop    = awesome->icon(fa::fa_solid, fa::fa_stop,        btnOpts);
-    icnPause   = awesome->icon(fa::fa_solid, fa::fa_pause,       btnOpts);
-    icnRefresh = awesome->icon(fa::fa_solid, fa::fa_sync,        btnOpts);
-    icnSave    = awesome->icon(fa::fa_solid, fa::fa_save,        btnOpts);
-    icnReadFile = awesome->icon(fa::fa_solid, fa::fa_folder_open, btnOpts);
+    auto mkIcon = [&](int character, const QColor& activeColor) {
+        QVariantMap opts;
+        opts["color"]          = QColor(Qt::white);
+        opts["color-active"]   = activeColor;
+        opts["color-disabled"] = QColor("#555555");
+        return awesome->icon(fa::fa_solid, character, opts);
+    };
+    icnPlay     = mkIcon(fa::fa_play,        QColor("#4CAF50")); // green  — go
+    icnStop     = mkIcon(fa::fa_stop,        QColor("#F44336")); // red    — stop
+    icnPause    = mkIcon(fa::fa_pause,       QColor("#FFC107")); // amber  — hold
+    icnRefresh  = mkIcon(fa::fa_sync,        QColor("#40C4FF")); // blue   — reload
+    icnSave     = mkIcon(fa::fa_save,        QColor("#66BB6A")); // green  — write
+    icnReadFile = mkIcon(fa::fa_folder_open, QColor("#FF9800")); // orange — open
 
     boxSerialPort->setPlaceholderText("Serial Port");
     if (port.isEmpty()) {

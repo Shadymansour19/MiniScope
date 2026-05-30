@@ -18,11 +18,13 @@ Channel::Channel(int id_, const QColor& color_, QChart* chart, fa::QtAwesome *aw
     lblDcLevel->setStyleSheet(colorStyle);
     QVariantMap onOpts;
     onOpts["color"] = color;
+    onOpts["color-active"] = color.lighter(150);
     onOpts["color-disabled"] = QColor("#555555");
     icnOn = awesome->icon(fa::fa_solid, fa::fa_wave_square, onOpts);
 
     QVariantMap offOpts;
     offOpts["color"] = QColor("#555555");
+    offOpts["color-active"] = QColor("#888888");
     icnOff = awesome->icon(fa::fa_solid, fa::fa_wave_square, offOpts);
 
     btnOnOff = new QToolButton(parentWidget);
