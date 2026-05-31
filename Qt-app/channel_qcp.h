@@ -1,0 +1,64 @@
+#ifndef CHANNEL_QCP_H
+#define CHANNEL_QCP_H
+
+#include <QDebug>
+#include <vector>
+#include <QString>
+#include <qnamespace.h>
+#include <qobject.h>
+#include <numeric>
+#include <cmath>
+#include <math.h>
+#include <QVector>
+#include <QPointF>
+#include <QtMath>
+#include <complex>
+#include <valarray>
+#include <algorithm>
+#include <QPushButton>
+#include <QCheckBox>
+#include <QToolButton>
+#include "qcustomplot.h"
+#include "qLabeledUnitedSpinBox.h"
+#include "QtAwesome.h"
+
+using Complex = std::complex<double>;
+using CArray  = std::valarray<Complex>;
+
+class Channel {
+public:
+    const int MAX_POINTS = 50000;
+    const int PEN_WIDTH  = 3;
+
+    int id;
+    bool isActive;
+    QString label;
+    QColor color;
+    double displayMinY, displayMaxY, amplitude, dcLevel, frequency, period;
+    QLabel *lblAmplitude, *lblDcLevel, *lblFreq, *lblPeriod;
+    QToolButton *btnOnOff;
+    QPen *pen;
+    QIcon icnOn, icnOff;
+    QLabeledUnitedSpinBox *dialPos, *dialRng;
+    QCPAxis  *axis;   // yAxis or yAxis2 of the parent QCustomPlot
+    QCPGraph *graph;
+    QWidget  *tabWidget;
+    QVector<QPointF> pts;
+
+    Channel(int id_, const QColor& color_, QCustomPlot *plot, QCPAxis *yAxis,
+            fa::QtAwesome *awesome, QWidget *parentWidget = nullptr);
+
+    void addPoints(const QVector<double>& times, const QVector<double>& vals);
+    void updateGraph();   // pushes pts into graph->setData()
+    void analyze();
+    void clear();
+    void reset();
+    void OnOffHandler();
+    void autoScale();
+    void updateDisplayMiniMax();
+    void updateNumericDisplay();
+    void enableUI();
+    QString formatNum(double num);
+};
+
+#endif // CHANNEL_QCP_H

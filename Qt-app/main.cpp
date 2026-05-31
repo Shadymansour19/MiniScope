@@ -1,4 +1,8 @@
+#ifdef USE_QCUSTOMPLOT
+#include "mainwindow_qcp.h"
+#else
 #include "mainwindow.h"
+#endif
 #include <QApplication>
 
 int main(int argc, char *argv[]) {

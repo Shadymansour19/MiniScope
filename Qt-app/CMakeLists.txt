@@ -11,8 +11,10 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Charts SerialPort)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts SerialPort)
+option(USE_QCUSTOMPLOT "Use QCustomPlot backend instead of Qt Charts" OFF)
+
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets Charts SerialPort PrintSupport)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts SerialPort PrintSupport)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -25,20 +27,33 @@ if(NOT qtawesome_POPULATED)
     FetchContent_Populate(QtAwesome)
 endif()
 
-set(PROJECT_SOURCES
-        main.cpp
-        mainwindow.cpp
-        mainwindow.h
+# Sources shared by both backends
+set(SHARED_SOURCES
+    main.cpp
+    qLabeledUnitedSpinBox.h qLabeledUnitedSpinBox.cpp
+    serialReader.h serialReader.cpp
 )
+
+# Backend-specific sources
+if(USE_QCUSTOMPLOT)
+    set(BACKEND_SOURCES
+        mainwindow_qcp.h mainwindow_qcp.cpp
+        channel_qcp.h   channel_qcp.cpp
+        qcustomplot.h   qcustomplot.cpp
+    )
+else()
+    set(BACKEND_SOURCES
+        mainwindow.h mainwindow.cpp
+        channel.h    channel.cpp
+        qUnitedAxis.h qUnitedAxis.cpp
+    )
+endif()
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(miniscope
         MANUAL_FINALIZATION
-        ${PROJECT_SOURCES}
-        channel.h channel.cpp
-        qLabeledUnitedSpinBox.h qLabeledUnitedSpinBox.cpp
-        qUnitedAxis.h qUnitedAxis.cpp
-        serialReader.h serialReader.cpp
+        ${SHARED_SOURCES}
+        ${BACKEND_SOURCES}
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET miniscope APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR
@@ -47,26 +62,34 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
 else()
     if(ANDROID)
         add_library(miniscope SHARED
-            ${PROJECT_SOURCES}
-            channel.h channel.cpp
-            qLabeledUnitedDial.h qLabeledUnitedDial.cpp
-            qUnitedAxis.h qUnitedAxis.cpp
-            serialthread.h serialthread.cpp
+            ${SHARED_SOURCES}
+            ${BACKEND_SOURCES}
         )
 # Define properties for Android with Qt 5 after find_package() calls as:
 #    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
     else()
         add_executable(miniscope
-            ${PROJECT_SOURCES}
-            channel.h channel.cpp
-            qLabeledUnitedDial.h qLabeledUnitedDial.cpp
-            qUnitedAxis.h qUnitedAxis.cpp
-            serialthread.h serialthread.cpp
+            ${SHARED_SOURCES}
+            ${BACKEND_SOURCES}
         )
     endif()
 endif()
 
-target_link_libraries(miniscope PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Charts Qt${QT_VERSION_MAJOR}::SerialPort)
+if(USE_QCUSTOMPLOT)
+    target_compile_definitions(miniscope PRIVATE USE_QCUSTOMPLOT)
+    target_link_libraries(miniscope PRIVATE
+        Qt${QT_VERSION_MAJOR}::Widgets
+        Qt${QT_VERSION_MAJOR}::SerialPort
+        Qt${QT_VERSION_MAJOR}::PrintSupport
+    )
+else()
+    target_link_libraries(miniscope PRIVATE
+        Qt${QT_VERSION_MAJOR}::Widgets
+        Qt${QT_VERSION_MAJOR}::Charts
+        Qt${QT_VERSION_MAJOR}::SerialPort
+    )
+endif()
+
 target_sources(miniscope PRIVATE
     ${qtawesome_SOURCE_DIR}/QtAwesome/QtAwesome.cpp
     ${qtawesome_SOURCE_DIR}/QtAwesome/QtAwesomeAnim.cpp
