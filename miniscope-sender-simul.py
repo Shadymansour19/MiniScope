@@ -30,7 +30,24 @@ import threading
 f1, f2 = 1, 5
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
+source_dir = os.path.join(script_dir, "Qt-app")
 build_dir = os.path.join(script_dir, "Qt-app", "build")
+
+if not os.path.exists(os.path.join(build_dir, "build.ninja")):
+    import shutil
+    for stale in ["CMakeCache.txt", "CMakeFiles"]:
+        path = os.path.join(build_dir, stale)
+        if os.path.isfile(path):
+            os.remove(path)
+        elif os.path.isdir(path):
+            shutil.rmtree(path)
+    print(">>> Configuring...")
+    result = subprocess.run(
+        ['cmake', '-B', build_dir, source_dir],
+        cwd=script_dir
+    )
+    if result.returncode != 0:
+        raise SystemExit("Configure failed.")
 
 print(">>> Building...")
 result = subprocess.run(
